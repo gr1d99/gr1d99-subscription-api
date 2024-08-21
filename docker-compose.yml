@@ -1,0 +1,12 @@
+﻿services:
+  gr1d99-subscription-api:
+    image: gr1d99-subscription-api
+    build:
+      context: .
+      dockerfile: gr1d99-subscription-api/Dockerfile
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+#      - ASPNETCORE_URLS=https://+:8081;http://+:8080

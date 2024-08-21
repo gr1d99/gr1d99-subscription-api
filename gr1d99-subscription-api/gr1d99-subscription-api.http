@@ -1,0 +1,6 @@
+@gr1d99_ubscription_api_HostAddress = http://localhost:5036
+
+GET {{gr1d99_ubscription_api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
