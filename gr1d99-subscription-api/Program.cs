@@ -1,3 +1,4 @@
+using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
@@ -11,7 +12,7 @@ builder.Logging.AddOpenTelemetry(options =>
 {
     options.SetResourceBuilder(
             ResourceBuilder.CreateDefault().AddService(service))
-        .AddConsoleExporter();
+        .AddOtlpExporter();
 });
 
 builder.Services.AddOpenTelemetry()
@@ -20,12 +21,20 @@ builder.Services.AddOpenTelemetry()
         tracing
             .AddAspNetCoreInstrumentation()
             .AddHttpClientInstrumentation()
-            .AddOtlpExporter(o => o.Endpoint = new Uri("http://otel-collector:4317")))
+            .AddOtlpExporter(o =>
+            {
+                o.Endpoint = new Uri("http://otel-collector:4318/v1/traces");
+                o.Protocol = OtlpExportProtocol.HttpProtobuf;
+            }))
     .WithMetrics(metrics => 
         metrics
             .AddAspNetCoreInstrumentation()
             .AddHttpClientInstrumentation()
-            .AddOtlpExporter(o => o.Endpoint = new Uri("http://otel-collector:4317")));
+            .AddOtlpExporter(o =>
+            {
+                o.Endpoint = new Uri("http://otel-collector:4318/v1/metrics");
+                o.Protocol = OtlpExportProtocol.HttpProtobuf;
+            }));
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

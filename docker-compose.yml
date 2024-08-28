@@ -15,51 +15,51 @@ services:
         condition: service_started
 
   otel-collector:
-    image: otel/opentelemetry-collector
+    container_name: otelcol
+    image: otel/opentelemetry-collector-contrib:latest
     restart: unless-stopped
-    command: [ "--config=/etc/collector-config.yaml", "${OTELCOL_ARGS}" ]
+    command: [ "--config=/etc/otelcol-config.yml" ]
     volumes:
-      - ./collector-config.yaml:/etc/collector-config.yaml
+      - /:/hostfs:ro
+      - ./collector-config.yaml:/etc/otelcol-config.yml
     ports:
       - "1888:1888"   # pprof extension
-      - "8888:8888"   # Prometheus metrics exposed by the collector
-      - "8889:8889"   # Prometheus exporter metrics
       - "13133:13133" # health_check extension
-      - "4317:4317"   # OTLP gRPC receiver
       - "55679:55679" # zpages extension
+      - "4318:4318"
+      - "5317:4317"
+      - "8888:8888"
     depends_on:
       - jaeger
-#      - zipkin-all-in-one
+
   jaeger:
+    container_name: jaeger
     image: jaegertracing/all-in-one:latest
     command:
       - "--memory.max-traces=5000"
       - "--query.base-path=/jaeger/ui"
       - "--prometheus.server-url=http://prometheus:9090"
-#      - "--prometheus.query.normalize-calls=true"
-#      - "--prometheus.query.normalize-duration=true"
+      - "--prometheus.query.normalize-calls=true"
+      - "--prometheus.query.normalize-duration=true"
     ports:
       - "16686:16686"
-      - "4317"
-      - "4318:4318"
       - "9411:9411"
+      - "4317:4317"
     environment:
-      - COLLECTOR_ZIPKIN_HOST_PORT=:9411
       - METRICS_STORAGE_TYPE=prometheus
-  
-  zipkin:
-    image: openzipkin/zipkin:latest
-    ports:
-      - "9412:9411"
-  
+      - COLLECTOR_ZIPKIN_HOST_PORT=:9411
+#      - COLLECTOR_OTLP_GRPC_HOST_PORT=jaeger:4317
   prometheus:
     image: prom/prometheus:latest
-    restart: always
+    container_name: prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus-config.yaml
+      - --web.enable-lifecycle
+      - --web.route-prefix=/
+      - --enable-feature=exemplar-storage
+      - --enable-feature=otlp-write-receiver
     volumes:
-      - ./prometheus.yaml:/etc/prometheus/prometheus.yml
-    command: 
-      - "--config.file=/etc/prometheus/prometheus.yml"
-      - "--web.enable-remote-write-receiver"
-#      - "--prometheus.query.support-spanmetrics-connector=true"
+      - ./prometheus.yaml:/etc/prometheus/prometheus-config.yaml
+    restart: unless-stopped
     ports:
       - "9090:9090"
